@@ -1,0 +1,14 @@
+(function(){
+  const params = new URLSearchParams(location.search);
+  const gamePath = params.get("game") || "/examples/hello-game/index.html";
+  const frame = document.getElementById("game"), device=document.getElementById("device"), sizeEl=document.getElementById("size"), logEl=document.getElementById("log");
+  const hostOrigin = location.origin; let helloSeen=false, preset="desktop", orientation="landscape";
+  const presets={desktop:[1280,720],tablet:[1024,768],mobile:[390,844]};
+  function log(label,obj){const line=`[${new Date().toLocaleTimeString()}] ${label}\n${obj?JSON.stringify(obj,null,2):""}\n\n`;logEl.textContent+=line;logEl.scrollTop=logEl.scrollHeight}
+  function applyViewport(){let [w,h]=presets[preset]; const nativePortrait=h>=w; if((orientation==='portrait')!==nativePortrait)[w,h]=[h,w]; const stage=document.querySelector('.stage'); const maxW=Math.max(260,stage.clientWidth-32), maxH=Math.max(320,window.innerHeight*.68); const scale=Math.min(1,maxW/w,maxH/h); device.style.width=(w*scale)+'px';device.style.height=(h*scale)+'px';sizeEl.textContent=`${w} × ${h} (escala ${Math.round(scale*100)}%)`; document.querySelectorAll('[data-preset]').forEach(b=>b.classList.toggle('active',b.dataset.preset===preset)); document.getElementById('portrait').classList.toggle('active',orientation==='portrait');document.getElementById('landscape').classList.toggle('active',orientation==='landscape');}
+  document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{preset=b.dataset.preset; orientation=preset==='mobile'?'portrait':'landscape';applyViewport()});
+  document.getElementById('portrait').onclick=()=>{orientation='portrait';applyViewport()}; document.getElementById('landscape').onclick=()=>{orientation='landscape';applyViewport()}; window.addEventListener('resize',applyViewport); applyViewport();
+  const gameUrl=new URL(gamePath,location.href); gameUrl.searchParams.set('fctool_origin',hostOrigin); frame.src=gameUrl.toString(); log('HOST',{loading:frame.src,viewport:'responsive test enabled'});
+  window.addEventListener('message',function(event){if(event.source!==frame.contentWindow)return;if(event.origin!==gameUrl.origin){log('REJEITADO: origin',{origin:event.origin});return}const msg=event.data;if(!msg||msg.namespace!=='fctool.game'||msg.protocolVersion!=='1.0')return;log('GAME -> HOST: '+msg.type,msg);if(msg.type==='HELLO'){helloSeen=true;const response={namespace:'fctool.game',protocolVersion:'1.0',type:'INITIALIZE',messageId:'host_'+Date.now(),timestamp:new Date().toISOString(),payload:{sessionId:'mock-session-001',configuration:{difficulty:'medium',sound:true},mode:'mock',viewport:{preset,orientation}}};frame.contentWindow.postMessage(response,gameUrl.origin);log('HOST -> GAME: INITIALIZE',response)}});
+  document.getElementById('clear').onclick=()=>{logEl.textContent='';if(helloSeen)log('HOST','log limpo; sessão continua')};
+})();

@@ -1,0 +1,258 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fctool.local/schemas/game-manifest-1.0.json",
+  "title": "FCTool Game Manifest 1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "fctoolGame",
+    "id",
+    "name",
+    "version",
+    "entrypoint",
+    "metadata",
+    "capabilities",
+    "responsive"
+  ],
+  "properties": {
+    "fctoolGame": {
+      "const": "1.0"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "minLength": 3,
+      "maxLength": 80
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    },
+    "entrypoint": {
+      "type": "string",
+      "pattern": "^(?!/)(?!.*\\.\\.)[^\\0]+\\.html?$"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "description"
+      ],
+      "properties": {
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "author": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "license": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "language": {
+          "type": "string",
+          "maxLength": 35,
+          "description": "Idioma principal sugerido, preferencialmente tag BCP 47, por exemplo pt-BR."
+        },
+        "suggestedAreas": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "uniqueItems": true,
+          "maxItems": 20
+        },
+        "suggestedSubjects": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "uniqueItems": true,
+          "maxItems": 30
+        },
+        "suggestedTopics": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "uniqueItems": true,
+          "maxItems": 50
+        },
+        "suggestedEducationLevels": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "uniqueItems": true,
+          "maxItems": 20
+        },
+        "keywords": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "uniqueItems": true,
+          "maxItems": 50
+        },
+        "thumbnail": {
+          "type": "string",
+          "pattern": "^(?!/)(?!.*\\.\\.)[^\\0]+\\.(png|jpe?g|webp|svg)$"
+        }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "completion"
+      ],
+      "properties": {
+        "score": {
+          "type": "boolean",
+          "default": false
+        },
+        "attempts": {
+          "type": "boolean",
+          "default": false
+        },
+        "completion": {
+          "type": "boolean"
+        },
+        "customEvents": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "configuration": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/configField"
+      },
+      "default": {}
+    },
+    "responsive": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "touch",
+        "orientations"
+      ],
+      "properties": {
+        "touch": {
+          "type": "boolean",
+          "const": true,
+          "description": "Ações essenciais devem ser operáveis por toque."
+        },
+        "orientations": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "portrait",
+              "landscape"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "preferredOrientation": {
+          "enum": [
+            "portrait",
+            "landscape",
+            "any"
+          ],
+          "default": "any"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "configField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "label"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "boolean",
+            "number",
+            "text",
+            "select"
+          ]
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "default": {},
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "step": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "number"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "required": {
+          "type": "boolean",
+          "default": false
+        },
+        "help": {
+          "type": "string",
+          "maxLength": 500
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "select"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "options"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

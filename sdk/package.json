@@ -1,0 +1,15 @@
+{
+  "name": "@fctool/game-sdk",
+  "version": "0.1.0",
+  "description": "SDK de referência para FCTool Game Protocol 1.0",
+  "type": "module",
+  "main": "dist/fctool-game-sdk.esm.js",
+  "module": "dist/fctool-game-sdk.esm.js",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

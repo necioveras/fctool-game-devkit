@@ -1,0 +1,55 @@
+{
+  "fctoolGame": "1.0",
+  "id": "hello-game",
+  "name": "Hello FCTool Game",
+  "version": "1.0.0",
+  "entrypoint": "index.html",
+  "metadata": {
+    "description": "Exemplo mínimo para testar handshake, pontuação, telemetria e conclusão.",
+    "author": "FCTool",
+    "language": "pt-BR",
+    "suggestedAreas": [
+      "Demonstração"
+    ],
+    "suggestedSubjects": [
+      "Integração"
+    ],
+    "suggestedTopics": [
+      "FCTool Game Protocol"
+    ],
+    "suggestedEducationLevels": [
+      "Teste"
+    ],
+    "keywords": [
+      "exemplo",
+      "integração",
+      "SDK"
+    ]
+  },
+  "capabilities": {
+    "score": true,
+    "attempts": true,
+    "completion": true,
+    "customEvents": true
+  },
+  "configuration": {
+    "difficulty": {
+      "type": "select",
+      "label": "Dificuldade",
+      "options": [
+        "easy",
+        "medium",
+        "hard"
+      ],
+      "default": "medium"
+    }
+  },
+  "responsive": {
+    "touch": true,
+    "orientations": [
+      "portrait",
+      "landscape"
+    ],
+    "preferredOrientation": "any"
+  }
+}

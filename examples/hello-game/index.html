@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Hello FCTool Game</title>
+  <style>
+    html,body{width:100%;min-height:100%;margin:0} body{box-sizing:border-box;font-family:system-ui,sans-serif;background:#f5f5f5;display:grid;place-items:center;min-height:100vh;padding:1rem;overflow-x:hidden}
+    .card{background:white;padding:2rem;border-radius:12px;max-width:520px;box-shadow:0 4px 18px rgba(0,0,0,.1)}
+    button{min-height:44px;padding:.7rem 1rem;margin:.25rem;touch-action:manipulation}.score{font-size:2rem;font-weight:700}
+  </style>
+</head>
+<body>
+  <section class="card">
+    <h1>Hello FCTool Game</h1>
+    <p id="config">Aguardando configuração...</p>
+    <p class="score">Pontos: <span id="score">0</span></p>
+    <button id="start" disabled>Iniciar</button>
+    <button id="point" disabled>+10 pontos</button>
+    <button id="hint" disabled>Pedir dica</button>
+    <button id="complete" disabled>Finalizar</button>
+    <p id="status"></p>
+  </section>
+  <script src="fctool-game-sdk.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FCTool Game Mock Host</title>
+<style>
+:root{--wine:#5b1011;--red:#b01d22;--paper:#f3f3f3;--blue:#6399b8;--navy:#002133}
+*{box-sizing:border-box} body{font-family:Ubuntu,system-ui,sans-serif;margin:0;padding:1rem;background:var(--paper);color:var(--navy)} h1{margin:.2rem 0;color:var(--wine)} .lead{margin-top:.25rem}.toolbar{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;padding:.75rem;background:white;border:1px solid #ddd;border-radius:10px;margin:1rem 0}.toolbar button,.toolbar select{min-height:40px;padding:.45rem .7rem}.toolbar button.active{background:var(--navy);color:white}.grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(320px,1fr);gap:1rem}.stage{min-height:72vh;background:#d9dde0;border-radius:12px;padding:1rem;display:flex;align-items:center;justify-content:center;overflow:auto}.device{background:white;box-shadow:0 5px 20px #0002;transition:width .2s,height .2s;max-width:100%}.device iframe{display:block;width:100%;height:100%;border:1px solid #aaa;background:white}.logpanel{min-width:0}.logpanel button{min-height:40px} pre{background:var(--navy);color:var(--paper);padding:1rem;height:66vh;overflow:auto;white-space:pre-wrap;border-radius:10px;margin-top:.5rem}.size{font-family:ui-monospace,monospace;font-size:.85rem}.hint{font-size:.85rem;color:#52616a}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.stage{min-height:55vh}pre{height:42vh}}
+</style>
+</head>
+<body>
+<h1>FCTool Game Mock Host</h1>
+<p class="lead">Simula o runtime do FCTool, registra o protocolo e testa responsividade.</p>
+<div class="toolbar" aria-label="Controles de viewport">
+  <strong>Viewport:</strong>
+  <button data-preset="desktop">Desktop</button><button data-preset="tablet">Tablet</button><button data-preset="mobile">Mobile</button>
+  <strong>Orientação:</strong><button id="portrait">Retrato</button><button id="landscape">Paisagem</button>
+  <span class="size" id="size"></span>
+</div>
+<p class="hint">Os presets simulam o espaço do iframe. Para validar toque, orientação, áudio e fullscreen, teste também em dispositivo real.</p>
+<div class="grid"><div class="stage"><div class="device" id="device"><iframe id="game" allow="fullscreen" title="Jogo em teste"></iframe></div></div><div class="logpanel"><button id="clear">Limpar log</button><pre id="log"></pre></div></div>
+<script src="mock-host.js"></script>
+</body>
+</html>

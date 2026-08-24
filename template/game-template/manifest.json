@@ -1,0 +1,59 @@
+{
+  "fctoolGame": "1.0",
+  "id": "meu-jogo",
+  "name": "Meu Jogo",
+  "version": "1.0.0",
+  "entrypoint": "index.html",
+  "metadata": {
+    "description": "Descrição breve do jogo",
+    "author": "Nome do desenvolvedor",
+    "language": "pt-BR",
+    "suggestedAreas": [
+      "Ciências da Natureza"
+    ],
+    "suggestedSubjects": [
+      "Física"
+    ],
+    "suggestedTopics": [
+      "Mecânica"
+    ],
+    "suggestedEducationLevels": [
+      "Ensino Médio"
+    ],
+    "keywords": [
+      "física",
+      "jogo educacional"
+    ]
+  },
+  "capabilities": {
+    "score": true,
+    "attempts": true,
+    "completion": true,
+    "customEvents": true
+  },
+  "configuration": {
+    "difficulty": {
+      "type": "select",
+      "label": "Dificuldade",
+      "options": [
+        "easy",
+        "medium",
+        "hard"
+      ],
+      "default": "medium"
+    },
+    "sound": {
+      "type": "boolean",
+      "label": "Som",
+      "default": true
+    }
+  },
+  "responsive": {
+    "touch": true,
+    "orientations": [
+      "portrait",
+      "landscape"
+    ],
+    "preferredOrientation": "any"
+  }
+}
