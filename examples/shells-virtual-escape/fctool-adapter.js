@@ -9,7 +9,15 @@
     started: false,
     completed: false,
     totalScore: 0,
-    hooksInstalled: false
+    hooksInstalled: false,
+    touchInputInstalled: false
+  };
+
+  const virtualKeys = {
+    held: new Set(),
+    pressed: new Set(),
+    released: new Set(),
+    pointers: new Map()
   };
 
   function safeNumber(value, fallback) {
@@ -65,6 +73,117 @@
     catch (err) { console.warn("[FCTool Adapter] COMPLETED não enviado:", err); }
   }
 
+  // O export HTML5 do GameMaker guarda as funções de evento dentro de
+  // JSON_game.GMObjects assim que o script do jogo é avaliado. Trocar apenas a
+  // propriedade em window depois disso não altera a referência já armazenada.
+  // Atualizamos as duas para que os hooks sejam usados quando o runner criar os
+  // objetos durante GameMaker_Init().
+  function replaceGameMakerEvent(name, replacement) {
+    const original = global[name];
+    if (typeof original !== "function") return null;
+    global[name] = replacement;
+
+    const objects = global.JSON_game && global.JSON_game.GMObjects;
+    if (!Array.isArray(objects)) return original;
+
+    function replaceReferences(value) {
+      if (!value || typeof value !== "object") return;
+      Object.keys(value).forEach(function (key) {
+        if (value[key] === original) value[key] = replacement;
+        else replaceReferences(value[key]);
+      });
+    }
+
+    objects.forEach(replaceReferences);
+    return original;
+  }
+
+  function clearVirtualKeys() {
+    virtualKeys.held.clear();
+    virtualKeys.pressed.clear();
+    virtualKeys.released.clear();
+    virtualKeys.pointers.clear();
+    document.querySelectorAll("#touch-controls .is-active").forEach(function (button) {
+      button.classList.remove("is-active");
+    });
+  }
+
+  function installTouchInput() {
+    if (state.touchInputInstalled) return;
+    state.touchInputInstalled = true;
+
+    const originalCheck = global.keyboard_check;
+    const originalPressed = global.keyboard_check_pressed;
+    const originalReleased = global.keyboard_check_released;
+    if (typeof originalCheck === "function") {
+      global.keyboard_check = function (key) {
+        return virtualKeys.held.has(Number(key)) || originalCheck(key);
+      };
+    }
+    if (typeof originalPressed === "function") {
+      global.keyboard_check_pressed = function (key) {
+        const code = Number(key);
+        const virtual = virtualKeys.pressed.has(code);
+        if (virtual) virtualKeys.pressed.delete(code);
+        return virtual || originalPressed(key);
+      };
+    }
+    if (typeof originalReleased === "function") {
+      global.keyboard_check_released = function (key) {
+        const code = Number(key);
+        const virtual = virtualKeys.released.has(code);
+        if (virtual) virtualKeys.released.delete(code);
+        return virtual || originalReleased(key);
+      };
+    }
+
+    const params = new URLSearchParams(global.location.search);
+    const forceTouch = params.get("touch_controls") === "1";
+    const hasTouch = forceTouch || (global.navigator && global.navigator.maxTouchPoints > 0) ||
+      (typeof global.matchMedia === "function" && global.matchMedia("(pointer: coarse)").matches);
+    if (hasTouch) document.body.classList.add("fctool-touch-enabled");
+
+    const controls = document.getElementById("touch-controls");
+    if (!controls) return;
+
+    function press(event) {
+      const button = event.target.closest("[data-key]");
+      if (!button) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const code = Number(button.dataset.key);
+      if (!virtualKeys.held.has(code)) virtualKeys.pressed.add(code);
+      virtualKeys.held.add(code);
+      virtualKeys.pointers.set(event.pointerId, code);
+      button.classList.add("is-active");
+      try { button.setPointerCapture(event.pointerId); } catch (_) {}
+    }
+
+    function release(event) {
+      const code = virtualKeys.pointers.get(event.pointerId);
+      if (code === undefined) return;
+      event.preventDefault();
+      event.stopPropagation();
+      virtualKeys.pointers.delete(event.pointerId);
+      const stillHeld = Array.from(virtualKeys.pointers.values()).some(function (value) { return value === code; });
+      if (!stillHeld) {
+        virtualKeys.held.delete(code);
+        virtualKeys.released.add(code);
+        const button = controls.querySelector('[data-key="' + code + '"]');
+        if (button) button.classList.remove("is-active");
+      }
+    }
+
+    controls.addEventListener("pointerdown", press);
+    controls.addEventListener("pointerup", release);
+    controls.addEventListener("pointercancel", release);
+    controls.addEventListener("contextmenu", function (event) { event.preventDefault(); });
+    global.addEventListener("blur", clearVirtualKeys);
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) clearVirtualKeys();
+    });
+  }
+
   function ensureTelemetryMaps() {
     try {
       const G = global.global;
@@ -84,6 +203,7 @@
   function installHooks() {
     if (state.hooksInstalled) return;
     state.hooksInstalled = true;
+    installTouchInput();
 
     // A FCTool já autentica o estudante. Qualquer navegação para a tela de login
     // interna do jogo é redirecionada para a seleção de fases.
@@ -103,14 +223,14 @@
     // O selecionador de fases continua usando o próprio fluxo do jogo, mas o
     // objeto de playthrough apenas abre a fase escolhida localmente.
     if (typeof global.gml_Object_obj_get_playthrought_Create_0 === "function") {
-      global.gml_Object_obj_get_playthrought_Create_0 = function () {
+      replaceGameMakerEvent("gml_Object_obj_get_playthrought_Create_0", function () {
         ensureTelemetryMaps();
         try { global.global.gmlplaythrough = safeNumber(global.global.gmlplaythrough, 0) + 1; } catch (_) {}
-      };
+      });
     }
 
     if (typeof global.gml_Object_obj_get_playthrought_Alarm_0 === "function") {
-      global.gml_Object_obj_get_playthrought_Alarm_0 = function (inst, other) {
+      replaceGameMakerEvent("gml_Object_obj_get_playthrought_Alarm_0", function (inst, other) {
         ensureTelemetryMaps();
         try {
           const selector = global.yyInst(inst, other, global.YYASSET_REF(0x0000003C));
@@ -122,17 +242,17 @@
           console.error("[FCTool Adapter] Não foi possível iniciar a fase:", err);
           try { state.sdk.error("PHASE_START_FAILED", "Não foi possível iniciar a fase selecionada."); } catch (_) {}
         }
-      };
+      });
     }
 
     if (typeof global.gml_Object_obj_get_playthrought_Other_62 === "function") {
-      global.gml_Object_obj_get_playthrought_Other_62 = function () {};
+      replaceGameMakerEvent("gml_Object_obj_get_playthrought_Other_62", function () {});
     }
 
     // Desabilita gravações Firebase preservando apenas o estado local necessário
     // à lógica original das fases.
     if (typeof global.gml_Object_obj_handle_data_Create_0 === "function") {
-      global.gml_Object_obj_handle_data_Create_0 = function (inst) {
+      replaceGameMakerEvent("gml_Object_obj_handle_data_Create_0", function (inst) {
         ensureTelemetryMaps();
         try {
           global.global.gmlcollected = 0;
@@ -143,15 +263,15 @@
           inst.gmlget_request_id = -1;
           inst.gmlrequest_level_id = -1;
         } catch (_) {}
-      };
+      });
     }
     ["gml_Object_obj_handle_data_Alarm_0", "gml_Object_obj_handle_data_Alarm_1", "gml_Object_obj_handle_data_Other_62", "gml_Object_obj_handle_data_Other_3"]
-      .forEach(function (name) { if (typeof global[name] === "function") global[name] = function () {}; });
+      .forEach(function (name) { replaceGameMakerEvent(name, function () {}); });
 
     // Coletáveis e pontuação.
     if (typeof global.gml_Object_obj_collect_Collision_obj_player === "function") {
       const originalCollect = global.gml_Object_obj_collect_Collision_obj_player;
-      global.gml_Object_obj_collect_Collision_obj_player = function (inst, other) {
+      replaceGameMakerEvent("gml_Object_obj_collect_Collision_obj_player", function (inst, other) {
         const level = currentLevel();
         const before = safeNumber(global.global && global.global.gmlcollected, 0);
         const result = originalCollect(inst, other);
@@ -160,7 +280,7 @@
         emit("collectible_collected", { level: level, collected: collected, pointsAdded: 10 });
         sendScore(score);
         return result;
-      };
+      });
     }
 
     // Tentativas nos puzzles de montagem de código.
@@ -171,7 +291,7 @@
     ].forEach(function (name) {
       if (typeof global[name] !== "function") return;
       const original = global[name];
-      global[name] = function (inst, other) {
+      replaceGameMakerEvent(name, function (inst, other) {
         const beforeCorrect = safeNumber(global.global && global.global.gmlsnap_correct, 0);
         const beforeWrong = safeNumber(global.global && global.global.gmlsnap_wrong, 0);
         const result = original(inst, other);
@@ -186,7 +306,7 @@
           });
         }
         return result;
-      };
+      });
     });
 
     // Cada conclusão de etapa do terminal concede a recompensa original e é
@@ -198,7 +318,7 @@
       const name = entry[0], structure = entry[1];
       if (typeof global[name] !== "function") return;
       const original = global[name];
-      global[name] = function (inst, other) {
+      replaceGameMakerEvent(name, function (inst, other) {
         const result = original(inst, other);
         const score = currentScore(inst, other);
         emit("puzzle_completed", {
@@ -210,13 +330,13 @@
         });
         sendScore(score);
         return result;
-      };
+      });
     });
 
     // Portal = fechamento da fase. Na última fase também conclui a GameSession.
     if (typeof global.gml_Object_obj_player_Collision_obj_portal === "function") {
       const originalPortal = global.gml_Object_obj_player_Collision_obj_portal;
-      global.gml_Object_obj_player_Collision_obj_portal = function (inst, other) {
+      replaceGameMakerEvent("gml_Object_obj_player_Collision_obj_portal", function (inst, other) {
         const level = currentLevel();
         let isFinal = false;
         try { isFinal = global.yyfequal(global.g_pBuiltIn.get_current_room(), global.YYASSET_REF(0x03000014)); } catch (_) {}
@@ -248,7 +368,7 @@
           });
         }
         return result;
-      };
+      });
     }
   }
 

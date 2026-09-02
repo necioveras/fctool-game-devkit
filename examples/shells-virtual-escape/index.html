@@ -59,6 +59,70 @@
       z-index: 9999;
     }
     #fctool-error[hidden] { display: none; }
+    #touch-controls {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: none;
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    body.fctool-touch-enabled #touch-controls { display: block; }
+    .touch-cluster {
+      position: absolute;
+      bottom: max(18px, env(safe-area-inset-bottom));
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+    }
+    .touch-cluster--move { left: max(18px, env(safe-area-inset-left)); }
+    .touch-cluster--actions { right: max(18px, env(safe-area-inset-right)); }
+    .touch-secondary {
+      display: grid;
+      grid-template-columns: repeat(2, 48px);
+      gap: 8px;
+    }
+    .touch-button {
+      width: 64px;
+      height: 64px;
+      border: 2px solid rgba(255, 255, 255, 0.8);
+      border-radius: 50%;
+      padding: 0;
+      pointer-events: auto;
+      touch-action: none;
+      background: rgba(0, 33, 51, 0.68);
+      color: #fff;
+      font: 700 24px/1 system-ui, sans-serif;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+    }
+    .touch-button--small {
+      width: 48px;
+      height: 48px;
+      font-size: 15px;
+    }
+    .touch-button--wide {
+      width: 72px;
+      height: 72px;
+      font-size: 13px;
+    }
+    .touch-button.is-active {
+      background: rgba(0, 151, 167, 0.88);
+      transform: scale(0.94);
+    }
+    .touch-pause {
+      position: absolute;
+      top: max(12px, env(safe-area-inset-top));
+      right: max(12px, env(safe-area-inset-right));
+    }
+    @media (max-height: 430px) {
+      .touch-cluster { bottom: max(8px, env(safe-area-inset-bottom)); gap: 8px; }
+      .touch-button { width: 56px; height: 56px; }
+      .touch-button--small { width: 42px; height: 42px; }
+      .touch-button--wide { width: 62px; height: 62px; }
+    }
   </style>
 </head>
 <body>
@@ -68,6 +132,21 @@
     </canvas>
   </div>
   <div id="fctool-error" hidden></div>
+  <div id="touch-controls" aria-label="Controles de toque">
+    <button class="touch-button touch-button--small touch-pause" type="button" data-key="27" aria-label="Pausar">II</button>
+    <div class="touch-cluster touch-cluster--move">
+      <button class="touch-button" type="button" data-key="65" aria-label="Mover para esquerda">&#9664;</button>
+      <button class="touch-button" type="button" data-key="68" aria-label="Mover para direita">&#9654;</button>
+    </div>
+    <div class="touch-cluster touch-cluster--actions">
+      <div class="touch-secondary">
+        <button class="touch-button touch-button--small" type="button" data-key="81" aria-label="Estrutura anterior">Q</button>
+        <button class="touch-button touch-button--small" type="button" data-key="69" aria-label="Próxima estrutura">E</button>
+      </div>
+      <button class="touch-button touch-button--wide" type="button" data-key="70" aria-label="Interagir">INTERAGIR</button>
+      <button class="touch-button touch-button--wide" type="button" data-key="32" aria-label="Pular">PULAR</button>
+    </div>
+  </div>
 
   <script src="fctool-game-sdk.js"></script>
   <script src="html5game/Shell's Virtual Escape.js"></script>
