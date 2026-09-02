@@ -61,6 +61,18 @@ http://localhost:8000/tools/mock-host.html?game=/examples/hello-game/index.html
 
 O host de teste exibirá as mensagens trocadas entre o jogo e o FCTool e permite simular viewports Desktop, Tablet e Mobile, em retrato ou paisagem.
 
+### Simular controles de toque
+
+Os presets **Desktop**, **Tablet** e **Mobile** do Mock Host alteram apenas o tamanho e a orientação do `iframe`; eles não fazem o navegador se identificar como um dispositivo com tela sensível ao toque.
+
+Jogos que exibem controles a partir de `navigator.maxTouchPoints` ou da media query `(pointer: coarse)` devem oferecer uma opção para forçar esses controles durante testes em desktop. No exemplo Shell's Virtual Escape, use:
+
+```text
+http://localhost:8000/tools/mock-host.html?game=/examples/shells-virtual-escape/index.html%3Ftouch_controls%3D1
+```
+
+Também é possível usar o modo de dispositivo do Chrome DevTools. Ative a simulação de um celular e recarregue a página inteira, pois normalmente a detecção de toque acontece durante a inicialização do jogo. Em um dispositivo móvel físico, os controles são ativados automaticamente.
+
 ## Validar um jogo
 
 Diretório:
