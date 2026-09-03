@@ -2,7 +2,7 @@
   "use strict";
 
   const GAME_ID = "shells-virtual-escape";
-  const GAME_VERSION = "1.2.0-fctool.1";
+  const GAME_VERSION = "1.2.1-fctool.1";
   const LEVELS = [
     { world: 1, level: 1, overallLevel: 1, structure: "stack", roomId: 0x03000010, createEvent: "gml_Room_Stack_01_Create" },
     { world: 1, level: 2, overallLevel: 2, structure: "stack", roomId: 0x03000011, createEvent: "gml_Room_Stack_02_Create" },
@@ -30,6 +30,9 @@
     worldBlock: 0x00000008,
     worldBox: 0x00000009
   };
+  const QUEUE_MODAL_DEPTH = -1000000;
+  const QUEUE_SLOT_DEPTH = QUEUE_MODAL_DEPTH - 1;
+  const QUEUE_BLOCK_DEPTH = QUEUE_MODAL_DEPTH - 2;
   const QUEUE_PUZZLES = [
     {
       title: "Fila 1/5 — Estruturas básicas",
@@ -161,6 +164,23 @@
     catch (_) { return false; }
   }
 
+  function queueActivityOpen() {
+    return hasAsset(QUEUE_OBJECTS.screen);
+  }
+
+  function isolateQueueActivityFromWorldDraw() {
+    const objects = global.JSON_game && global.JSON_game.GMObjects;
+    if (!Array.isArray(objects)) return;
+    [QUEUE_OBJECTS.screen, QUEUE_OBJECTS.slot, QUEUE_OBJECTS.block].forEach(function (assetId) {
+      const object = objects[assetId];
+      if (object) object.DrawEvent = function () {};
+    });
+    const slotObject = objects[QUEUE_OBJECTS.slot];
+    if (slotObject && typeof slotObject.DrawGUI !== "function") {
+      slotObject.DrawGUI = function (inst) { global.draw_self(inst); };
+    }
+  }
+
   function destroyInstances(inst, instances) {
     instances.forEach(function (instance) {
       try { global.instance_destroy(inst, instance.id); } catch (_) {}
@@ -207,6 +227,7 @@
     inst.gmlslots = [];
     inst.gmlteste_color = false;
     inst.gmlalready_dragging = false;
+    inst.depth = QUEUE_MODAL_DEPTH;
 
     puzzle.blocks.forEach(function (blockText, indexInPuzzle) {
       const displayedIndex = puzzle.blocks.length - indexInPuzzle - 1;
@@ -218,11 +239,11 @@
       const block = global.yyInst(inst, other, blockId);
       const slot = global.yyInst(inst, other, slotId);
       const desiredWidth = safeNumber(global.string_width(blockText), 40) + 28;
-      block.depth = -2;
+      block.depth = QUEUE_BLOCK_DEPTH;
       block.gmlvalue = indexInPuzzle + 1;
       block.gmltext = blockText;
       block.image_xscale = desiredWidth / Math.max(1, safeNumber(block.sprite_width, desiredWidth));
-      slot.depth = -2;
+      slot.depth = QUEUE_SLOT_DEPTH;
       slot.gmlvalue = indexInPuzzle + 1;
       slot.image_xscale = desiredWidth / Math.max(1, safeNumber(slot.sprite_width, desiredWidth));
       inst.gmlblocks.push(blockId);
@@ -232,6 +253,9 @@
 
   function drawQueuePuzzle(inst) {
     const puzzle = QUEUE_PUZZLES[Math.max(0, Math.min(QUEUE_PUZZLES.length - 1, safeNumber(inst.gmlevent_user_now, 0)))];
+    // O sprite do terminal também é desenhado na GUI. Assim, fundo, texto,
+    // slots e blocos pertencem à mesma camada e sempre cobrem o mundo/HUD.
+    global.draw_self(inst);
     global.draw_set_halign(0);
     global.draw_set_valign(0);
     global.draw_set_font(global.YYASSET_REF(0x06000001));
@@ -315,6 +339,7 @@
     destroyInstances(inst, blocks);
     destroyInstances(inst, (inst.gmlslots || []).map(function (id) { return instanceFromId(inst, other, id); }).filter(Boolean));
     if (puzzleIndex <= 1) createQueueWorldBlocks(inst, other);
+    if (puzzleIndex === 0) global.global.gmlcurrent_data_estructure = 1;
     if (puzzleIndex === 2 && Array.isArray(global.global.gmlpush_pop)) global.global.gmlpush_pop[0] = true;
     if (puzzleIndex === 3 && Array.isArray(global.global.gmlpush_pop)) global.global.gmlpush_pop[1] = true;
     if (puzzleIndex === 4) {
@@ -379,6 +404,7 @@
 
   function installQueueWorldFixes() {
     ensureQueueTerminals();
+    isolateQueueActivityFromWorldDraw();
 
     if (typeof global.gml_Object_obj_terminal_screen_queue_Create_0 === "function") {
       replaceGameMakerEvent("gml_Object_obj_terminal_screen_queue_Create_0", function (inst, other) {
@@ -401,6 +427,23 @@
     }
     if (typeof global.gml_Object_obj_cod_blocks_queue_Step_0 === "function") {
       replaceGameMakerEvent("gml_Object_obj_cod_blocks_queue_Step_0", queueBlockStep);
+    }
+
+    // O export original só escondia o HUD e congelava o cronômetro para a tela
+    // de Pilha (objeto 0x56). A atividade de Fila usa o objeto 0x55.
+    if (typeof global.gml_Object_obj_game_Draw_0 === "function") {
+      const originalGameDraw = global.gml_Object_obj_game_Draw_0;
+      replaceGameMakerEvent("gml_Object_obj_game_Draw_0", function (inst, other) {
+        if (queueActivityOpen()) return;
+        return originalGameDraw(inst, other);
+      });
+    }
+    if (typeof global.gml_Object_obj_game_Step_0 === "function") {
+      const originalGameStep = global.gml_Object_obj_game_Step_0;
+      replaceGameMakerEvent("gml_Object_obj_game_Step_0", function (inst, other) {
+        if (queueActivityOpen()) return;
+        return originalGameStep(inst, other);
+      });
     }
 
     if (typeof global.gml_Object_obj_terminal_queue_Step_0 === "function") {
@@ -898,8 +941,12 @@
         let room = null;
         try { room = global.g_pBuiltIn.get_current_room(); } catch (_) {}
         const active = levelForRoom(room) || state.activeLevel;
+        if (active && active.world === 2 && active.level === 1) {
+          const terminal = gameInstance(inst, other, QUEUE_OBJECTS.terminal);
+          if (!terminal || !terminal.gmlpuzzle_solved) return;
+        }
         const transitionKey = active ? active.world + ":" + active.level : String(currentLevel());
-        if (state.transitioningLevel === transitionKey) return originalPortal(inst, other);
+        if (state.transitioningLevel === transitionKey) return;
         state.transitioningLevel = transitionKey;
         const isFinal = Boolean(active && active.world === 2 && active.level === 5);
         const scoreBefore = currentScore(inst, other);
@@ -910,7 +957,19 @@
         const collected = safeNumber(global.global && global.global.gmlcollected, 0);
         const correct = safeNumber(global.global && global.global.gmlsnap_correct, 0);
         const wrong = safeNumber(global.global && global.global.gmlsnap_wrong, 0);
-        const result = originalPortal(inst, other);
+        let result;
+        if (active && active.world === 2) {
+          const portal = gameInstance(inst, other, 0x00000035);
+          if (portal) portal.gmllevel_completed = true;
+          inst.gmlspd = 0;
+          try {
+            if (global.global.gmlplay_music) {
+              global.audio_play_sound(global.YYASSET_REF(0x02000006), 10, false, 0.25);
+            }
+          } catch (_) {}
+        } else {
+          result = originalPortal(inst, other);
+        }
         const roundedScore = Math.max(0, Math.round(scoreBefore));
         state.totalScore += roundedScore;
         if (active) state.completedLevels.add(transitionKey);
@@ -971,7 +1030,7 @@
       installHooks();
       fitCanvas();
       global.addEventListener("resize", fitCanvas);
-      state.sdk.ready({ engine: "GameMaker", adapter: "fctool-adapter-5", offline: true });
+      state.sdk.ready({ engine: "GameMaker", adapter: "fctool-adapter-6", offline: true });
       global.GameMaker_Init();
     } catch (err) {
       console.error("[FCTool Adapter] Falha na inicialização:", err);

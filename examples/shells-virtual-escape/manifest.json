@@ -2,7 +2,7 @@
   "fctoolGame": "1.0",
   "id": "shells-virtual-escape",
   "name": "Shell's Virtual Escape",
-  "version": "1.2.0-fctool.1",
+  "version": "1.2.1-fctool.1",
   "entrypoint": "index.html",
   "metadata": {
     "description": "Jogo educacional de plataforma e resolução de desafios sobre estruturas de dados, com mundos dedicados a pilhas e filas e atividades de montagem de código.",
