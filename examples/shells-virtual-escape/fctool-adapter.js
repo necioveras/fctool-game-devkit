@@ -2,7 +2,7 @@
   "use strict";
 
   const GAME_ID = "shells-virtual-escape";
-  const GAME_VERSION = "1.2.1-fctool.1";
+  const GAME_VERSION = "1.2.3-fctool.1";
   const LEVELS = [
     { world: 1, level: 1, overallLevel: 1, structure: "stack", roomId: 0x03000010, createEvent: "gml_Room_Stack_01_Create" },
     { world: 1, level: 2, overallLevel: 2, structure: "stack", roomId: 0x03000011, createEvent: "gml_Room_Stack_02_Create" },
@@ -19,6 +19,9 @@
   const AUTH_ROOM_IDS = new Set([0x03000001, 0x03000002, 0x03000003]);
   const PHASE_SELECTION_ROOM_ID = 0x03000004;
   const CREDITS_ROOM_ID = 0x0300001A;
+  // O conteúdo de Fila permanece no pacote para desenvolvimento futuro, mas
+  // não faz parte da versão atualmente publicada no seletor de mundos.
+  const QUEUE_WORLD_IN_MENU = false;
   const QUEUE_OBJECTS = {
     block: 0x0000000C,
     slot: 0x0000000F,
@@ -46,8 +49,9 @@
       title: "Fila 2/5 — Inicialização",
       description: "Crie uma fila vazia inicializando início e fim com NULL.",
       blocks: ["FILA *f", "(FILA *)", "malloc(sizeof(FILA));", "f->inicio", "NULL;", "f->fim", "NULL;", "return f;"],
-      slots: [[585, 155], [715, 155], [845, 155], [600, 230], [760, 230], [600, 300], [760, 300], [625, 385]],
-      lines: [[470, 105, "FILA *criarFila() {"], [660, 150, "="], [500, 225, "="], [500, 295, "="], [500, 380, "}"]],
+      slots: [[580, 155], [700, 155], [800, 155], [470, 230], [620, 230], [470, 300], [620, 300], [470, 370]],
+      lines: [[470, 105, "FILA *criarFila() {"], [670, 150, "="], [575, 225, "="], [575, 295, "="], [470, 420, "}"]],
+      notes: [[470, 465, "Estado criado: INÍCIO = NULL    FIM = NULL"]],
       arrow: [720, 304, 90]
     },
     {
@@ -265,6 +269,9 @@
     puzzle.lines.forEach(function (line) {
       global.draw_text(line[0], line[1], line[2]);
     });
+    (puzzle.notes || []).forEach(function (line) {
+      global.draw_text(line[0], line[1], line[2]);
+    });
   }
 
   function queueBlockStep(inst, other) {
@@ -340,6 +347,16 @@
     destroyInstances(inst, (inst.gmlslots || []).map(function (id) { return instanceFromId(inst, other, id); }).filter(Boolean));
     if (puzzleIndex <= 1) createQueueWorldBlocks(inst, other);
     if (puzzleIndex === 0) global.global.gmlcurrent_data_estructure = 1;
+    if (puzzleIndex === 1) {
+      global.global.gmlcurrent_data_estructure = 1;
+      global.global.gmlqueue_initialized = true;
+      global.global.gmlqueue_size = 0;
+      emit("queue_initialized", withLevelContext({
+        size: 0,
+        front: null,
+        rear: null
+      }, "queue"));
+    }
     if (puzzleIndex === 2 && Array.isArray(global.global.gmlpush_pop)) global.global.gmlpush_pop[0] = true;
     if (puzzleIndex === 3 && Array.isArray(global.global.gmlpush_pop)) global.global.gmlpush_pop[1] = true;
     if (puzzleIndex === 4) {
@@ -718,13 +735,32 @@
     installTouchInput();
     installQueueWorldFixes();
 
-    // O conteúdo de filas já existe no export original, porém o segundo título
-    // nunca era adicionado ao array e o seletor limitava o cursor ao Mundo 1.
+    // Mantém o conteúdo de Fila preservado, mas oculta esse mundo do menu até
+    // que todas as suas fases estejam prontas para publicação.
     if (typeof global.gml_Object_obj_selecao_de_fases_Create_0 === "function") {
       const originalSelectionCreate = global.gml_Object_obj_selecao_de_fases_Create_0;
       replaceGameMakerEvent("gml_Object_obj_selecao_de_fases_Create_0", function (inst, other) {
         const result = originalSelectionCreate(inst, other);
-        if (inst && inst.gmlgameTitle) inst.gmlgameTitle[1] = "Mundo 02:Fila";
+        if (inst && Array.isArray(inst.gmlgameTitle)) {
+          if (QUEUE_WORLD_IN_MENU) inst.gmlgameTitle[1] = "Mundo 02:Fila";
+          else inst.gmlgameTitle.length = 1;
+        }
+        if (inst && !QUEUE_WORLD_IN_MENU) {
+          inst.gmlselectWorld = 0;
+          inst.gmlselectWorldLerp = 0;
+        }
+        return result;
+      });
+    }
+
+    if (!QUEUE_WORLD_IN_MENU && typeof global.gml_Object_obj_selecao_de_fases_Step_0 === "function") {
+      const originalSelectionStep = global.gml_Object_obj_selecao_de_fases_Step_0;
+      replaceGameMakerEvent("gml_Object_obj_selecao_de_fases_Step_0", function (inst, other) {
+        const result = originalSelectionStep(inst, other);
+        // Elimina também o deslocamento horizontal intermediário produzido
+        // pelas setas, mantendo o seletor firmemente no único mundo publicado.
+        inst.gmlselectWorld = 0;
+        inst.gmlselectWorldLerp = 0;
         return result;
       });
     }
@@ -739,7 +775,14 @@
         state.activeLevel = entry;
         state.transitioningLevel = null;
         state.abandoningLevel = false;
-        try { global.global.gmllevel_index = entry.overallLevel; } catch (_) {}
+        try {
+          global.global.gmllevel_index = entry.overallLevel;
+          if (entry.world === 2 && entry.level === 2) {
+            global.global.gmlcurrent_data_estructure = 1;
+            global.global.gmlqueue_initialized = false;
+            global.global.gmlqueue_size = 0;
+          }
+        } catch (_) {}
         startOnce({ source: "phase_selection", world: entry.world, structure: entry.structure });
         emit("level_started", withLevelContext({
           playthrough: safeNumber(global.global && global.global.gmlplaythrough, 1)
@@ -941,14 +984,18 @@
         let room = null;
         try { room = global.g_pBuiltIn.get_current_room(); } catch (_) {}
         const active = levelForRoom(room) || state.activeLevel;
-        if (active && active.world === 2 && active.level === 1) {
+        if (active && active.world === 2 && active.level <= 2) {
           const terminal = gameInstance(inst, other, QUEUE_OBJECTS.terminal);
           if (!terminal || !terminal.gmlpuzzle_solved) return;
+          if (active.level === 2 && !global.global.gmlqueue_initialized) return;
         }
         const transitionKey = active ? active.world + ":" + active.level : String(currentLevel());
         if (state.transitioningLevel === transitionKey) return;
         state.transitioningLevel = transitionKey;
-        const isFinal = Boolean(active && active.world === 2 && active.level === 5);
+        const isFinal = Boolean(active && (
+          (active.world === 2 && active.level === 5) ||
+          (!QUEUE_WORLD_IN_MENU && active.world === 1 && active.level === 5)
+        ));
         const scoreBefore = currentScore(inst, other);
         const time = (function () {
           try { return safeNumber(global.yyInst(inst, other, global.YYASSET_REF(0x00000018)).gml_time, 0); }
@@ -1030,7 +1077,7 @@
       installHooks();
       fitCanvas();
       global.addEventListener("resize", fitCanvas);
-      state.sdk.ready({ engine: "GameMaker", adapter: "fctool-adapter-6", offline: true });
+      state.sdk.ready({ engine: "GameMaker", adapter: "fctool-adapter-8", offline: true });
       global.GameMaker_Init();
     } catch (err) {
       console.error("[FCTool Adapter] Falha na inicialização:", err);
