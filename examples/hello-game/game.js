@@ -5,8 +5,9 @@
 
   try {
     const ctx = await fctool.initialize();
-    $("config").textContent = "Configuração: " + JSON.stringify(ctx.configuration || {});
-    fctool.ready();
+    const config = ctx.configuration;
+    $("config").textContent = `Configuração aplicada: fase=${config.initialLevel}, dificuldade=${config.difficulty}, som=${config.sound}`;
+    fctool.ready({appliedConfiguration: config});
     $("status").textContent = "Pronto.";
     $("start").disabled = false;
 

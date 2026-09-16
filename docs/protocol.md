@@ -115,6 +115,27 @@ Evento de telemetria extensível:
 
 O FCTool não deve enviar dados pessoais desnecessários ao jogo.
 
+#### Semântica de `configuration`
+
+`configuration` contém os **valores efetivos da instância do card** configurada pelo professor. As chaves correspondem às opções declaradas em `manifest.json`. O manifesto declara o que pode ser configurado; o FCTool persiste os valores escolhidos no card; ao criar uma sessão, o host envia um snapshot desses valores em `INITIALIZE`.
+
+O jogo **não deve iniciar a experiência pedagógica antes de receber `INITIALIZE`**. Depois de receber a mensagem, deve validar/aplicar a configuração, preparar a experiência correspondente e somente então enviar `READY`. Isso evita iniciar uma fase, dificuldade ou regra padrão antes de conhecer a configuração escolhida pelo professor.
+
+O host deve enviar `configuration` como objeto, mesmo quando vazio (`{}`). A configuração usada na execução deve ser registrada como snapshot da `GameSession`, juntamente com a versão exata do jogo, para preservar reprodutibilidade.
+
+Exemplo: se o professor selecionar `initialLevel = "level-3"`, o jogo recebe esse valor em `INITIALIZE` e é responsabilidade do jogo interpretá-lo e iniciar a fase correspondente. O FCTool não precisa conhecer a semântica interna de `level-3`.
+
+Opcionalmente, `READY` pode incluir `appliedConfiguration`, permitindo diagnóstico no Mock Host e confirmação da configuração efetivamente aplicada:
+
+```json
+{
+  "appliedConfiguration": {
+    "initialLevel": "level-3",
+    "difficulty": "medium"
+  }
+}
+```
+
 ### COMMAND (reservado)
 
 Reservado para evolução do protocolo, como pausa solicitada pelo host. Jogos 1.0 podem ignorá-lo.

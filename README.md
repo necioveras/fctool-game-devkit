@@ -1,6 +1,6 @@
 # FCTool Game Developer Kit
 
-Versão inicial de referência: **0.3.0**  
+Versão de referência: **0.4.0**  
 Protocolo suportado: **FCTool Game Protocol 1.0**
 
 Este kit permite desenvolver um jogo Web como uma aplicação independente e integrá-lo ao FCTool **sem acesso ao código interno da plataforma**.
@@ -34,7 +34,8 @@ const game = new FCToolGameSDK.FCToolGame({
 });
 
 const ctx = await game.initialize();
-game.ready();
+applyConfiguration(ctx.configuration); // fase, dificuldade etc.
+game.ready({ appliedConfiguration: ctx.configuration });
 game.start();
 
 // durante o jogo
@@ -59,7 +60,7 @@ Depois abra:
 http://localhost:8000/tools/mock-host.html?game=/examples/hello-game/index.html
 ```
 
-O host de teste exibirá as mensagens trocadas entre o jogo e o FCTool e permite simular viewports Desktop, Tablet e Mobile, em retrato ou paisagem.
+O host de teste lê o `manifest.json`, gera os controles declarados em `configuration`, envia os valores escolhidos em `INITIALIZE`, exibe as mensagens trocadas e permite simular viewports Desktop, Tablet e Mobile, em retrato ou paisagem.
 
 ### Simular controles de toque
 

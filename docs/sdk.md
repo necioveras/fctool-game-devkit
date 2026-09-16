@@ -18,7 +18,17 @@ Se `targetOrigin` não for informado, o SDK tenta ler `fctool_origin` da query s
 const context = await fctool.initialize();
 ```
 
-Envia `HELLO` e aguarda `INITIALIZE`.
+Envia `HELLO` e aguarda `INITIALIZE`. O `Promise` só resolve quando o host envia um `sessionId` válido e `configuration` como objeto. O jogo deve aguardar essa resolução antes de iniciar a experiência pedagógica.
+
+```js
+const context = await fctool.initialize();
+const { initialLevel, difficulty } = context.configuration;
+
+applyConfiguration({ initialLevel, difficulty });
+fctool.ready({ appliedConfiguration: context.configuration });
+startGame();
+fctool.start();
+```
 
 ## ready()
 

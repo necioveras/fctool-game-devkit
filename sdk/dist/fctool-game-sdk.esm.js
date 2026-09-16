@@ -17,7 +17,10 @@ export class FCToolGame {
         if(this.options.targetOrigin!=="*"&&event.origin!==this.options.targetOrigin) return;
         const msg=event.data;
         if(!msg||msg.namespace!==NS||msg.protocolVersion!==PROTOCOL_VERSION||msg.type!=="INITIALIZE") return;
-        window.clearTimeout(timeout); window.removeEventListener("message",onMessage); this.initialized=true; this.context=msg.payload; resolve(this.context);
+        const payload=msg.payload;
+        if(!payload||typeof payload.sessionId!=="string"||!payload.sessionId.trim()){window.clearTimeout(timeout);window.removeEventListener("message",onMessage);reject(new Error("INITIALIZE inválido: sessionId ausente ou inválido."));return}
+        if(!payload.configuration||typeof payload.configuration!=="object"||Array.isArray(payload.configuration)){window.clearTimeout(timeout);window.removeEventListener("message",onMessage);reject(new Error("INITIALIZE inválido: configuration deve ser um objeto."));return}
+        window.clearTimeout(timeout); window.removeEventListener("message",onMessage); this.initialized=true; this.context=payload; resolve(this.context);
       };
       window.addEventListener("message",onMessage);
       this.send("HELLO",{gameId:this.options.gameId,gameVersion:this.options.gameVersion},true);

@@ -82,3 +82,42 @@ Na instalação, o FCTool poderá pré-preencher a classificação usando as sug
 - `responsive`: requisitos de responsividade e toque.
 
 O schema formal está em `schemas/manifest.schema.json`.
+
+
+## Ciclo de vida da configuração
+
+A seção `configuration` é um contrato declarativo. Ela não configura globalmente o jogo e não deve ser modificada pelo FCTool. Cada chave descreve um campo que o professor poderá configurar em uma instância do card.
+
+```text
+manifest.json -> formulário do professor -> configuração do card -> snapshot da GameSession -> INITIALIZE -> jogo
+```
+
+O valor persistido deve ser o `value`, nunca o texto de apresentação. Para `select`, `options` aceita valores primitivos (compatibilidade) ou objetos `{ "value": ..., "label": ... }`. A forma com `value`/`label` é recomendada quando o identificador interno difere do texto mostrado ao professor.
+
+Exemplo:
+
+```json
+"configuration": {
+  "initialLevel": {
+    "type": "select",
+    "label": "Fase inicial",
+    "options": [
+      { "value": "level-1", "label": "Fase 1" },
+      { "value": "level-2", "label": "Fase 2" },
+      { "value": "level-3", "label": "Fase 3" }
+    ],
+    "default": "level-1",
+    "required": true
+  }
+}
+```
+
+Regras de conformidade:
+
+- o jogo deve aguardar `INITIALIZE` antes de iniciar a experiência pedagógica;
+- o host envia todas as configurações efetivas do card em `payload.configuration`;
+- o jogo interpreta os valores; o FCTool não interpreta semântica específica de fase, dificuldade etc.;
+- o FCTool deve validar a configuração do card contra o manifesto antes de publicar/executar;
+- em `select`, o valor configurado/default deve existir entre as opções;
+- em `number`, `default` deve respeitar `min`, `max` e `step` quando declarados;
+- a configuração efetiva deve ser copiada para a `GameSession` no início da execução.

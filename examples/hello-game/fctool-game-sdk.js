@@ -17,7 +17,10 @@
           if(this.options.targetOrigin!=="*"&&event.origin!==this.options.targetOrigin)return;
           const msg=event.data;
           if(!msg||msg.namespace!==NS||msg.protocolVersion!==PROTOCOL_VERSION||msg.type!=="INITIALIZE")return;
-          clearTimeout(timeout); window.removeEventListener("message",onMessage); this.initialized=true; this.context=msg.payload; resolve(this.context);
+          const payload=msg.payload;
+        if(!payload||typeof payload.sessionId!=="string"||!payload.sessionId.trim()){clearTimeout(timeout);window.removeEventListener("message",onMessage);reject(new Error("INITIALIZE inválido: sessionId ausente ou inválido."));return}
+        if(!payload.configuration||typeof payload.configuration!=="object"||Array.isArray(payload.configuration)){clearTimeout(timeout);window.removeEventListener("message",onMessage);reject(new Error("INITIALIZE inválido: configuration deve ser um objeto."));return}
+        clearTimeout(timeout); window.removeEventListener("message",onMessage); this.initialized=true; this.context=payload; resolve(this.context);
         };
         const timeout=setTimeout(()=>{window.removeEventListener("message",onMessage);reject(new Error("Timeout aguardando INITIALIZE do FCTool."))},this.options.initializeTimeoutMs);
         window.addEventListener("message",onMessage);

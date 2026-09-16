@@ -32,13 +32,43 @@
     "customEvents": true
   },
   "configuration": {
+    "initialLevel": {
+      "type": "select",
+      "label": "Fase inicial",
+      "options": [
+        {
+          "value": "level-1",
+          "label": "Fase 1"
+        },
+        {
+          "value": "level-2",
+          "label": "Fase 2"
+        },
+        {
+          "value": "level-3",
+          "label": "Fase 3"
+        }
+      ],
+      "default": "level-1",
+      "required": true,
+      "help": "Define a fase em que o estudante iniciará a sessão."
+    },
     "difficulty": {
       "type": "select",
       "label": "Dificuldade",
       "options": [
-        "easy",
-        "medium",
-        "hard"
+        {
+          "value": "easy",
+          "label": "Fácil"
+        },
+        {
+          "value": "medium",
+          "label": "Média"
+        },
+        {
+          "value": "hard",
+          "label": "Difícil"
+        }
       ],
       "default": "medium"
     },
