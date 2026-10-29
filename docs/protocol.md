@@ -106,6 +106,7 @@ Evento de telemetria extensível:
 ```json
 {
   "sessionId": "sessao-opaca",
+  "studentId": "aluno-opaco-123",
   "configuration": {
     "difficulty": "medium",
     "sound": true
@@ -113,7 +114,7 @@ Evento de telemetria extensível:
 }
 ```
 
-O FCTool não deve enviar dados pessoais desnecessários ao jogo.
+`studentId` é opcional e identifica de forma opaca o aluno associado à sessão quando o jogo precisa distinguir participantes. O jogo não deve inferir dados pessoais a partir dele nem tratá-lo como nome, e-mail ou matrícula. O FCTool não deve enviar dados pessoais desnecessários ao jogo.
 
 #### Semântica de `configuration`
 

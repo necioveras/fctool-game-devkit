@@ -30,6 +30,7 @@ O contexto retornado contém apenas informações necessárias à execução, co
 ```js
 {
   sessionId: "sessao-opaca",
+  studentId: "aluno-opaco-123", // opcional
   configuration: {
     difficulty: "medium",
     sound: true
@@ -37,7 +38,7 @@ O contexto retornado contém apenas informações necessárias à execução, co
 }
 ```
 
-O jogo não precisa conhecer aluno, turma, roteiro, Django ou banco de dados.
+Quando necessário, o jogo pode usar `studentId` como identificador opaco da sessão do aluno. Ele não precisa conhecer nome, e-mail, matrícula, turma, roteiro, Django ou banco de dados.
 
 ## 4. Informe que está pronto
 

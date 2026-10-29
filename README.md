@@ -60,7 +60,7 @@ Depois abra:
 http://localhost:8000/tools/mock-host.html?game=/examples/hello-game/index.html
 ```
 
-O host de teste lê o `manifest.json`, gera os controles declarados em `configuration`, envia os valores escolhidos em `INITIALIZE`, exibe as mensagens trocadas e permite simular viewports Desktop, Tablet e Mobile, em retrato ou paisagem.
+O host de teste lê o `manifest.json`, gera os controles declarados em `configuration`, permite informar o ID do aluno que inicia a sessão, envia esse contexto em `INITIALIZE`, exibe as mensagens trocadas e permite simular viewports Desktop, Tablet e Mobile, em retrato ou paisagem.
 
 ### Simular controles de toque
 
