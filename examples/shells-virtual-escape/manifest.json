@@ -12,11 +12,32 @@
     "suggestedTopics": ["Pilha", "Estruturas de Dados", "Programação"],
     "keywords": ["estrutura de dados", "pilha", "LIFO", "programação", "jogo educacional"]
   },
-  "capabilities": {
-    "score": true,
-    "attempts": true,
-    "completion": true,
-    "customEvents": true
+  "outputs": {
+    "score": {
+      "enabled": true,
+      "minimum": 0
+    },
+    "completion": {
+      "schema": {
+        "type": "object",
+        "required": ["score", "result", "levelsCompleted"],
+        "properties": {
+          "score": { "type": "number", "minimum": 0 },
+          "result": { "type": "string", "enum": ["success"] },
+          "levelsCompleted": { "type": "integer", "minimum": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "events": {
+      "queue_initialized": { "description": "Fila inicializada.", "schema": { "type": "object", "properties": {}, "additionalProperties": true } },
+      "level_started": { "description": "Fase iniciada.", "schema": { "type": "object", "properties": {}, "additionalProperties": true } },
+      "level_abandoned": { "description": "Fase abandonada.", "schema": { "type": "object", "properties": {}, "additionalProperties": true } },
+      "collectible_collected": { "description": "Coletável obtido.", "schema": { "type": "object", "properties": {}, "additionalProperties": true } },
+      "puzzle_attempt": { "description": "Tentativa de resolução de puzzle.", "schema": { "type": "object", "properties": {}, "additionalProperties": true } },
+      "puzzle_completed": { "description": "Puzzle concluído.", "schema": { "type": "object", "properties": {}, "additionalProperties": true } },
+      "level_completed": { "description": "Fase concluída.", "schema": { "type": "object", "properties": {}, "additionalProperties": true } }
+    }
   },
   "configuration": {},
   "responsive": {

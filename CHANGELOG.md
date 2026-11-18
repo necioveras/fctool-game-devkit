@@ -2,6 +2,9 @@
 
 ## 0.4.0
 
+- `manifest.outputs` passa a ser o contrato obrigatório de mensagens `GAME -> HOST`, substituindo `capabilities`;
+- Mock Host valida `SCORE`, `COMPLETED` e eventos customizados contra o contrato e registra diagnósticos no log;
+- eventos customizados precisam ser declarados e são tratados pela FCTool como logs de telemetria;
 - formalizado o ciclo completo de configuração: Manifest -> Card -> GameSession -> `INITIALIZE` -> jogo;
 - jogo passa a ter como requisito de conformidade aguardar `INITIALIZE` antes de iniciar a experiência pedagógica;
 - `INITIALIZE.configuration` é formalizado como snapshot da configuração efetiva do card;

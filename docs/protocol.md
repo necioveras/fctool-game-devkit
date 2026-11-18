@@ -67,6 +67,8 @@ Opcionais, usados quando o jogo possui pausa explícita.
 }
 ```
 
+O jogo só pode enviar `SCORE` quando `manifest.outputs.score.enabled` for `true`. `value` deve respeitar `minimum` e `maximum`, quando declarados.
+
 ### EVENT
 
 Evento de telemetria extensível:
@@ -81,6 +83,8 @@ Evento de telemetria extensível:
 }
 ```
 
+O nome deve existir em `manifest.outputs.events` e `data` deve corresponder ao schema declarado para o evento. A FCTool valida e registra eventos customizados como logs de telemetria; eles não alteram automaticamente pontuação, conclusão ou progresso.
+
 ### COMPLETED
 
 ```json
@@ -89,6 +93,8 @@ Evento de telemetria extensível:
   "result": "success"
 }
 ```
+
+O payload deve corresponder a `manifest.outputs.completion.schema`. Apenas `COMPLETED` possui a semântica de encerrar com sucesso a GameSession; eventos customizados não substituem essa mensagem.
 
 ### ERROR
 

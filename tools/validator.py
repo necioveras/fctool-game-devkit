@@ -18,9 +18,38 @@ def safe_name(name):
 def _select_value(option):
     return option.get('value') if isinstance(option, dict) else option
 
+def _is_number(value):
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+def validate_output_schema(schema, prefix):
+    errors=[]
+    if not isinstance(schema, dict): return [f'{prefix} deve ser objeto']
+    allowed={'type','required','properties','additionalProperties','enum','minimum','maximum','minLength','maxLength'}
+    for name in set(schema)-allowed: errors.append(f'{prefix}.{name} não é suportado')
+    typ=schema.get('type')
+    if typ not in {'object','string','number','integer','boolean'}: errors.append(f'{prefix}.type inválido')
+    if typ=='object':
+        props=schema.get('properties')
+        if not isinstance(props, dict): errors.append(f'{prefix}.properties deve ser objeto')
+        else:
+            for name, child in props.items(): errors += validate_output_schema(child, f'{prefix}.properties.{name}')
+        required=schema.get('required',[])
+        if not isinstance(required,list) or any(not isinstance(v,str) for v in required): errors.append(f'{prefix}.required deve ser uma lista de textos')
+        elif isinstance(props,dict):
+            for name in required:
+                if name not in props: errors.append(f'{prefix}.required referencia propriedade inexistente: {name}')
+        if 'additionalProperties' in schema and not isinstance(schema['additionalProperties'],bool): errors.append(f'{prefix}.additionalProperties deve ser boolean')
+    if 'enum' in schema and (not isinstance(schema['enum'],list) or not schema['enum']): errors.append(f'{prefix}.enum deve ser uma lista não vazia')
+    for name in ('minimum','maximum'):
+        if name in schema and not _is_number(schema[name]): errors.append(f'{prefix}.{name} deve ser número')
+    if _is_number(schema.get('minimum')) and _is_number(schema.get('maximum')) and schema['minimum']>schema['maximum']: errors.append(f'{prefix}.minimum não pode ser maior que maximum')
+    for name in ('minLength','maxLength'):
+        if name in schema and (not isinstance(schema[name],int) or isinstance(schema[name],bool) or schema[name]<0): errors.append(f'{prefix}.{name} deve ser inteiro >= 0')
+    return errors
+
 def validate_manifest(m, exists):
     errors=[]
-    for k in ['fctoolGame','id','name','version','entrypoint','metadata','capabilities','responsive']:
+    for k in ['fctoolGame','id','name','version','entrypoint','metadata','outputs','responsive']:
         if k not in m: errors.append(f"campo obrigatório ausente: {k}")
     if m.get('fctoolGame') != '1.0': errors.append('fctoolGame deve ser "1.0"')
     if not ID_RE.match(str(m.get('id',''))): errors.append('id inválido')
@@ -34,8 +63,33 @@ def validate_manifest(m, exists):
         for k in ['suggestedAreas','suggestedSubjects','suggestedTopics','suggestedEducationLevels','keywords']:
             if k in md and (not isinstance(md[k], list) or any(not isinstance(v, str) or not v.strip() for v in md[k])):
                 errors.append(f'metadata.{k} deve ser uma lista de textos não vazios')
-    caps=m.get('capabilities',{})
-    if not isinstance(caps, dict) or caps.get('completion') is not True: errors.append('capabilities.completion deve ser true')
+    outputs=m.get('outputs',{})
+    if not isinstance(outputs,dict): errors.append('outputs deve ser objeto')
+    else:
+        for name in set(outputs)-{'score','completion','events'}: errors.append(f'outputs.{name} não é suportado')
+        score=outputs.get('score')
+        if not isinstance(score,dict) or not isinstance(score.get('enabled'),bool): errors.append('outputs.score.enabled deve ser boolean')
+        else:
+            for name in set(score)-{'enabled','minimum','maximum'}: errors.append(f'outputs.score.{name} não é suportado')
+        if isinstance(score,dict) and score.get('enabled'):
+            for name in ('minimum','maximum'):
+                if name in score and not _is_number(score[name]): errors.append(f'outputs.score.{name} deve ser número')
+            if _is_number(score.get('minimum')) and _is_number(score.get('maximum')) and score['minimum']>score['maximum']: errors.append('outputs.score.minimum não pode ser maior que maximum')
+        completion=outputs.get('completion')
+        if not isinstance(completion,dict) or 'schema' not in completion: errors.append('outputs.completion.schema é obrigatório')
+        elif isinstance(completion,dict):
+            for name in set(completion)-{'schema'}: errors.append(f'outputs.completion.{name} não é suportado')
+            errors += validate_output_schema(completion.get('schema'), 'outputs.completion.schema')
+        events=outputs.get('events')
+        if not isinstance(events,dict): errors.append('outputs.events deve ser objeto')
+        else:
+            for name,event in events.items():
+                prefix=f'outputs.events.{name}'
+                if not re.match(r'^[a-z][a-z0-9_]{0,79}$',str(name)): errors.append(f'{prefix}: nome de evento inválido')
+                if not isinstance(event,dict): errors.append(f'{prefix} deve ser objeto'); continue
+                for field_name in set(event)-{'description','schema'}: errors.append(f'{prefix}.{field_name} não é suportado')
+                if not isinstance(event.get('description'),str) or not event.get('description','').strip(): errors.append(f'{prefix}.description é obrigatória')
+                errors += validate_output_schema(event.get('schema'), f'{prefix}.schema')
     conf=m.get('configuration',{})
     if not isinstance(conf,dict): errors.append('configuration deve ser objeto')
     else:

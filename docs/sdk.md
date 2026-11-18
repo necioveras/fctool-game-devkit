@@ -52,6 +52,8 @@ fctool.resume();
 fctool.score(80, 100);
 ```
 
+Requer `outputs.score.enabled: true` no manifesto e deve respeitar os limites declarados.
+
 ## emit(name, data?)
 
 ```js
@@ -59,11 +61,15 @@ fctool.emit("attempt", { success: false });
 fctool.emit("hint_requested");
 ```
 
+Cada nome e o schema de seus dados devem estar declarados em `outputs.events`.
+
 ## complete(data?)
 
 ```js
 fctool.complete({ score: 80, result: "success" });
 ```
+
+O objeto deve corresponder a `outputs.completion.schema`.
 
 ## error(code, message, data?)
 

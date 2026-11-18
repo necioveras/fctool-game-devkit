@@ -25,11 +25,36 @@
       "jogo educacional"
     ]
   },
-  "capabilities": {
-    "score": true,
-    "attempts": true,
-    "completion": true,
-    "customEvents": true
+  "outputs": {
+    "score": {
+      "enabled": true,
+      "minimum": 0,
+      "maximum": 10
+    },
+    "completion": {
+      "schema": {
+        "type": "object",
+        "required": ["score", "result"],
+        "properties": {
+          "score": { "type": "number", "minimum": 0, "maximum": 10 },
+          "result": { "type": "string", "enum": ["success", "failed"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "events": {
+      "attempt": {
+        "description": "Tentativa realizada pelo estudante.",
+        "schema": {
+          "type": "object",
+          "required": ["success"],
+          "properties": {
+            "success": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        }
+      }
+    }
   },
   "configuration": {
     "initialLevel": {

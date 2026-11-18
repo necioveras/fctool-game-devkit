@@ -26,11 +26,59 @@
       "SDK"
     ]
   },
-  "capabilities": {
-    "score": true,
-    "attempts": true,
-    "completion": true,
-    "customEvents": true
+  "outputs": {
+    "score": {
+      "enabled": true,
+      "minimum": 0,
+      "maximum": 100
+    },
+    "completion": {
+      "schema": {
+        "type": "object",
+        "required": ["score", "result"],
+        "properties": {
+          "score": { "type": "number", "minimum": 0, "maximum": 100 },
+          "result": { "type": "string", "enum": ["success", "finished"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "events": {
+      "attempt": {
+        "description": "Tentativa iniciada pelo estudante.",
+        "schema": {
+          "type": "object",
+          "required": ["success", "number"],
+          "properties": {
+            "success": { "type": "boolean" },
+            "number": { "type": "integer", "minimum": 1 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "score_changed": {
+        "description": "Pontuação alterada.",
+        "schema": {
+          "type": "object",
+          "required": ["score"],
+          "properties": {
+            "score": { "type": "number", "minimum": 0, "maximum": 100 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "hint_requested": {
+        "description": "Dica solicitada pelo estudante.",
+        "schema": {
+          "type": "object",
+          "required": ["score"],
+          "properties": {
+            "score": { "type": "number", "minimum": 0, "maximum": 100 }
+          },
+          "additionalProperties": false
+        }
+      }
+    }
   },
   "configuration": {
     "initialLevel": {
