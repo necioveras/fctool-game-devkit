@@ -2,6 +2,8 @@ export type FCToolGameConfiguration = Record<string, unknown>;
 export interface FCToolInitializePayload {
     sessionId: string;
     studentId?: string;
+    scriptId?: string;
+    cardId?: string;
     configuration: FCToolGameConfiguration;
     [key: string]: unknown;
 }

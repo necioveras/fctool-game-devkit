@@ -9,6 +9,7 @@
 - opções `select` passam a aceitar também `{ value, label }`, preservando suporte aos valores primitivos existentes;
 - validador passa a verificar tipos de `default`, pertinência de defaults de `select`, limites/step numéricos, nomes de chaves e opções duplicadas;
 - Mock Host passa a ler o manifesto, gerar controles de configuração e enviar os valores escolhidos em `INITIALIZE`;
+- Mock Host permite simular `scriptId` e `cardId` para executar o jogo em diferentes pontos de um mesmo roteiro;
 - Hello Game demonstra seleção de fase inicial e dificuldade;
 - protocolo permanece FCTool Game Protocol 1.0 (clarificação/expansão compatível do contrato).
 

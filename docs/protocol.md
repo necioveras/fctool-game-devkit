@@ -107,6 +107,8 @@ Evento de telemetria extensível:
 {
   "sessionId": "sessao-opaca",
   "studentId": "aluno-opaco-123",
+  "scriptId": "roteiro-opaco-456",
+  "cardId": "card-opaco-789",
   "configuration": {
     "difficulty": "medium",
     "sound": true
@@ -115,6 +117,8 @@ Evento de telemetria extensível:
 ```
 
 `studentId` é opcional e identifica de forma opaca o aluno associado à sessão quando o jogo precisa distinguir participantes. O jogo não deve inferir dados pessoais a partir dele nem tratá-lo como nome, e-mail ou matrícula. O FCTool não deve enviar dados pessoais desnecessários ao jogo.
+
+`scriptId` e `cardId` são opcionais e identificam, de forma opaca, o roteiro e o card em que a sessão foi iniciada. Eles permitem que o jogo reconheça o ponto de execução dentro de um roteiro sem acoplar-se à estrutura interna da plataforma. Cards diferentes de um mesmo roteiro compartilham o `scriptId` e possuem `cardId`s distintos. Esses IDs fazem parte do contexto da sessão e não de `configuration`.
 
 #### Semântica de `configuration`
 
